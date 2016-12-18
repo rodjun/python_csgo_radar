@@ -39,5 +39,5 @@ class Process(object):
 
     def get_module_base(self, module_name):
         for module in self.list_modules():
-            if str(module.szModule).lower() == module_name.lower():
+            if module.szModule.decode('UTF-8').lower() == module_name.lower():
                 return module.modBaseAddr

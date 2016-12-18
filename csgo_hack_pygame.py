@@ -32,8 +32,8 @@ addr_entity_list = addresses['dwEntityList']
 
 csgo_process = Process.Process("Counter-Strike: Global Offensive")
 
-client_dll = csgo_process.get_module_base("b'client.dll'")
-engine_dll = csgo_process.get_module_base("b'engine.dll'")
+client_dll = csgo_process.get_module_base("client.dll")
+engine_dll = csgo_process.get_module_base("engine.dll")
 
 local_player_ptr = c_void_p()
 client_state_ptr = c_void_p()
