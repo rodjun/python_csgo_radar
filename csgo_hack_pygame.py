@@ -1,3 +1,5 @@
+# TODO: Maybe turn all of this into a class instead of a script with a while true loop?
+# TODO: Config file
 import Process
 import requests
 import datetime
@@ -9,11 +11,13 @@ from ctypes import c_void_p, create_string_buffer
 from renderers import PyGameRadar
 from bsptrace import BspTrace
 
+
+CHECK_VISIBILITY = False
 RADAR_SIZE = 400
 ZOOM = 10
 GAME_PATH = os.path.join("C:\\", "Program Files (x86)", "Steam",
                          "steamapps", "common", "Counter-Strike Global Offensive",
-                         "csgo")
+                         "csgo") #lul
 
 #offsets = json.loads(open("data/offsets.json", "r").read())
 offsets = requests.get("https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.json").json()
@@ -106,7 +110,7 @@ while True:
             y_coords.append(enemy_pos.y)
             enemy = int(entity.team.value != local_player.team.value)
             color.append(enemy)
-            if enemy:
+            if CHECK_VISIBILITY and enemy:
                 visible.append(bsp_tracer.isVisible(local_player.origin, entity.origin))
             else:
                 visible.append(0) # Only check for enemies because the code is very expensive to run
