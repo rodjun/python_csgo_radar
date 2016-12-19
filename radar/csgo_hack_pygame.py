@@ -1,8 +1,6 @@
-# TODO: Maybe turn all of this into a class instead of a script with a while true loop?
-# TODO: Config file
 import datetime
 import math
-import os
+import json
 import requests
 from ctypes import c_void_p, create_string_buffer
 from time import sleep
@@ -11,108 +9,105 @@ from radar.game_structures import Vector2, Entity
 from radar.renderers import PyGameRadar
 from radar.bsptrace import BspTrace
 
-CHECK_VISIBILITY = False
-RADAR_SIZE = 400
-ZOOM = 10
-GAME_PATH = os.path.join("C:\\", "Program Files (x86)", "Steam",
-                         "steamapps", "common", "Counter-Strike Global Offensive",
-                         "csgo") #lul
 
-#offsets = json.loads(open("data/offsets.json", "r").read())
-offsets = requests.get("https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.json").json()
+class CSGORadar(object):
+    renderers = {"pygame": PyGameRadar}
+    def __init__(self):
+        self.config = json.loads(open("config.json", "r").read())
+        offsets = requests.get(self.config['offsets_url']).json()
+        self.addresses = offsets['signatures']
+        self.netvars = offsets['netvars']
+        self.local_player = Entity()
+        self.entities = [Entity() for i in range(64)]
+        self.renderer = self.renderers[self.config['renderer']](self.config['radar'])
+        self.bsp_tracer = BspTrace(self.config["game_path"])
+        self.process = Process("Counter-Strike: Global Offensive")
+        self.client_dll = self.process.get_module_base("client.dll")
+        self.engine_dll = self.process.get_module_base("engine.dll")
 
-print("Offsets last updated on: {}".format(datetime.date.fromtimestamp(offsets['timestamp'])))
+        print("Initiaded succesfully!")
+        print("Offsets last updated on: {}".format(datetime.date.fromtimestamp(offsets['timestamp'])))
 
-addresses = offsets['signatures']
-netvars = offsets['netvars']
+    def run(self):
+        self.read(self.addresses)
 
-addr_local_player = addresses['dwLocalPlayer']
-addr_entity_list = addresses['dwEntityList']
+        x_coords = []
+        y_coords = []
+        color = []
+        visible = []
 
-csgo_process = Process("Counter-Strike: Global Offensive")
+        center = Vector2(self.config['radar']['size'] / 2, self.config['radar']['size'] / 2)
+        my_pos = Vector2.from_vec3(self.local_player.origin)
 
-client_dll = csgo_process.get_module_base("client.dll")
-engine_dll = csgo_process.get_module_base("engine.dll")
+        for entity in self.entities:
+            if entity.is_valid:
+                enemy_pos = Vector2.from_vec3(entity.origin)
+                enemy_pos = my_pos - enemy_pos
 
-local_player_ptr = c_void_p()
-client_state_ptr = c_void_p()
-csgo_process.read_memory((client_dll + addr_local_player), local_player_ptr)
+                distance = enemy_pos.length() * (0.02 * self.config['radar']['zoom'])
 
-local_player = Entity()
+                distance = min(distance, self.config['radar']['size'] // 2)
 
-entities = [Entity() for i in range(64)]
+                enemy_pos.normalize()
+                enemy_pos *= distance
 
-renderer = PyGameRadar(RADAR_SIZE, "My PyGame Game")
+                enemy_pos += center
 
-map_path = create_string_buffer(128)
+                enemy_pos = self.rotate_point(enemy_pos, center, -self.local_player.angles.y)
 
-bsp_tracer = BspTrace(GAME_PATH)
+                x_coords.append(enemy_pos.x)
+                y_coords.append(enemy_pos.y)
+                enemy = int(entity.team.value != self.local_player.team.value)
+                color.append(enemy)
+                if self.config['check_visibility'] and enemy:
+                    visible.append(self.bsp_tracer.isVisible(self.local_player.origin, entity.origin))
+                else:
+                    visible.append(0)
 
-def rotate_point(to_rotate, center, angle, angle_in_radians=False):
-    if not angle_in_radians:
-        angle *= math.pi / 180
+        self.renderer.update(x_coords, y_coords, color, visible)
 
-    cos_theta = math.cos(angle)
-    sin_theta = math.sin(angle)
-
-    result = Vector2(cos_theta * (to_rotate.x - center.x) - sin_theta * (to_rotate.y - center.y),
-                     sin_theta * (to_rotate.x - center.x) + cos_theta * (to_rotate.y - center.y))
-
-    result += center
-    return result
-
-while True:
-    local_player.update_info(csgo_process, local_player_ptr.value, netvars, True)
-
-    csgo_process.read_memory(engine_dll + addresses['dwClientState'], client_state_ptr)
-    csgo_process.read_memory(client_state_ptr.value + addresses['dwClientState_ViewAngles'], local_player.angles)
-    csgo_process.read_memory(client_state_ptr.value + addresses['dwClientState_MapDirectory'], map_path)
-
-    utf_map_path = map_path.value.decode('UTF-8')
-    if utf_map_path != "" and  utf_map_path != bsp_tracer.map_path:
-        bsp_tracer.change_map(utf_map_path)
-
-    entity_ptr = c_void_p()
-
-    for i in range(64):
-        csgo_process.read_memory((client_dll + addr_entity_list) + i * 16, entity_ptr)
-        if entity_ptr.value is not None:
-            entities[i].update_info(csgo_process, entity_ptr.value, netvars, True)
+    def read(self, addresses):
+        local_player_ptr = c_void_p()
+        self.process.read_memory((self.client_dll + addresses['dwLocalPlayer']), local_player_ptr)
+        if local_player_ptr.value is not None:
+            self.local_player.update_info(self.process, local_player_ptr.value, self.netvars, True)
         else:
-            entities[i].update_info(None, None, None, False)
+            self.local_player.update_info(None, None, None, False)
 
-    x_coords = []
-    y_coords = []
-    color = []
-    visible = []
+        client_state_ptr = c_void_p()
+        map_path = create_string_buffer(128)
+        self.process.read_memory(self.engine_dll + addresses['dwClientState'], client_state_ptr)
+        self.process.read_memory(client_state_ptr.value + addresses['dwClientState_ViewAngles'], self.local_player.angles)
+        self.process.read_memory(client_state_ptr.value + addresses['dwClientState_MapDirectory'], map_path)
 
-    center = Vector2(RADAR_SIZE / 2, RADAR_SIZE / 2)
-    my_pos = Vector2.from_vec3(local_player.origin)
+        utf_map_path = map_path.value.decode('UTF-8')
+        if utf_map_path != "" and utf_map_path != self.bsp_tracer.map_path:
+            self.bsp_tracer.change_map(utf_map_path)
 
-    for entity in entities:
-        if entity.is_valid:
-            enemy_pos = Vector2.from_vec3(entity.origin)
-            enemy_pos = my_pos - enemy_pos
-
-            distance = enemy_pos.length() * (0.02 * ZOOM)
-
-            distance = min(distance, RADAR_SIZE // 2)
-
-            enemy_pos.normalize()
-            enemy_pos *= distance
-
-            enemy_pos += center
-
-            enemy_pos = rotate_point(enemy_pos, center, -(local_player.angles.y))
-
-            x_coords.append(enemy_pos.x)
-            y_coords.append(enemy_pos.y)
-            enemy = int(entity.team.value != local_player.team.value)
-            color.append(enemy)
-            if CHECK_VISIBILITY and enemy:
-                visible.append(bsp_tracer.isVisible(local_player.origin, entity.origin))
+        entity_ptr = c_void_p()
+        for i in range(64):
+            self.process.read_memory((self.client_dll + self.addresses['dwEntityList']) + i * 16, entity_ptr)
+            if entity_ptr.value is not None:
+                self.entities[i].update_info(self.process, entity_ptr.value, self.netvars, True)
             else:
-                visible.append(0) # Only check for enemies because the code is very expensive to run
+                self.entities[i].update_info(None, None, None, False)
 
-    renderer.update(x_coords, y_coords, color, visible)
-    sleep(0.0080) # Should give about 120fps for dat smooth hacking
+    def rotate_point(self, to_rotate, center, angle, angle_in_radians=False):
+        if not angle_in_radians:
+            angle *= math.pi / 180
+
+        cos_theta = math.cos(angle)
+        sin_theta = math.sin(angle)
+
+        result = Vector2(cos_theta * (to_rotate.x - center.x) - sin_theta * (to_rotate.y - center.y),
+                         sin_theta * (to_rotate.x - center.x) + cos_theta * (to_rotate.y - center.y))
+
+        result += center
+        return result
+
+
+if __name__ == "__main__":
+    not_a_hack = CSGORadar()
+    while True:
+        not_a_hack.run()
+        sleep(0.008)

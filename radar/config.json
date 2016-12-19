@@ -1,0 +1,12 @@
+{
+  "radar": {
+    "window_title": "Totally not a radar",
+    "size": 400,
+    "zoom": 10,
+    "bg_image": ""
+  },
+  "renderer": "pygame",
+  "game_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\csgo",
+  "offsets_url": "https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.json",
+  "check_visibility": false
+}
