@@ -1,5 +1,5 @@
 import copy
-from ctypes import byref, sizeof, c_int, c_char, windll
+from ctypes import byref, sizeof, c_int, windll
 from radar.structures import CreateToolhelp32Snapshot, TH32CS_CLASS, MODULEENTRY32, Module32First, Module32Next, CloseHandle
 
 

@@ -10,13 +10,13 @@ class Color:
 
 # TODO: Add an option to use sprites for background and player icons
 class PyGameRadar(object):
-    def __init__(self, size, title):
+    def __init__(self, config):
         pygame.init()
         pygame.display.init()
-        pygame.display.set_caption(title)
+        pygame.display.set_caption(config['window_title'])
         self.factor = 10
-        self.radius = size // 2
-        self.screen = pygame.display.set_mode([size, size])
+        self.radius = config['size'] // 2
+        self.screen = pygame.display.set_mode([config['size'], config['size']])
 
     def draw_background(self):
         self.screen.fill(Color.BLACK)
