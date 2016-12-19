@@ -17,10 +17,8 @@ Requirements for the project:
 
  * Windows, i might try to make a mac version eventually™
  * Python 3 (Only tested on python 3.5)
- * pygame (pip install pygame)
- * requests (pip install requests)
- * [pywin32](https://sourceforge.net/projects/pywin32/files/pywin32/)
-
+ * pygame
+ * requests
 
 Feel free to add new renderers! I did a matplotlib one as a joke and it was super slow but worked, i might add it later. Web "renderers" would be pretty cool also, it could be used to make a remote radar for mobile phones or other computers.
 

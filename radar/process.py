@@ -1,25 +1,21 @@
 import copy
-import win32gui
-import win32process
-import win32api
-import win32con
-from ctypes import *
-from structures import *
-#from ctypes.wintypes import *
+from ctypes import byref, sizeof, c_int, c_char, windll
+from radar.structures import CreateToolhelp32Snapshot, TH32CS_CLASS, MODULEENTRY32, Module32First, Module32Next, CloseHandle
 
 
 class Process(object):
     def __init__(self, name):
-        hwnd = win32gui.FindWindow(None, name)
+        hwnd = windll.user32.FindWindowW(None, name)
         print("hwnd: {}".format(hwnd))
-        tid, pid = win32process.GetWindowThreadProcessId(hwnd)
-        self.pid = pid
+        pid = c_int()
+        windll.user32.GetWindowThreadProcessId(hwnd, byref(pid))
+        self.pid = pid.value
         print("pid: {}".format(pid))
-        self.process = win32api.OpenProcess(win32con.PROCESS_VM_READ, False, self.pid)
+        self.process = windll.kernel32.OpenProcess(0x10, False, self.pid) # 16 = PROCESS_VM_READ (0x0010)
 
     def read_memory(self, address, into):
-        if not windll.kernel32.ReadProcessMemory(self.process.handle, address, byref(into), sizeof(into), None):
-            raise Exception("Could not ReadProcessMemory: ", win32api.GetLastError())
+        if not windll.kernel32.ReadProcessMemory(self.process, address, byref(into), sizeof(into), None):
+            raise Exception("Could not ReadProcessMemory: ", windll.kernel32.GetLastError())
 
     def list_modules(self):
         module_list = []

@@ -1,16 +1,15 @@
 # TODO: Maybe turn all of this into a class instead of a script with a while true loop?
 # TODO: Config file
-import Process
-import requests
 import datetime
 import math
 import os
-from game_structures import Vector2, Entity
-from time import sleep
+import requests
 from ctypes import c_void_p, create_string_buffer
-from renderers import PyGameRadar
-from bsptrace import BspTrace
-
+from time import sleep
+from radar.process import Process
+from radar.game_structures import Vector2, Entity
+from radar.renderers import PyGameRadar
+from radar.bsptrace import BspTrace
 
 CHECK_VISIBILITY = False
 RADAR_SIZE = 400
@@ -30,7 +29,7 @@ netvars = offsets['netvars']
 addr_local_player = addresses['dwLocalPlayer']
 addr_entity_list = addresses['dwEntityList']
 
-csgo_process = Process.Process("Counter-Strike: Global Offensive")
+csgo_process = Process("Counter-Strike: Global Offensive")
 
 client_dll = csgo_process.get_module_base("client.dll")
 engine_dll = csgo_process.get_module_base("engine.dll")
