@@ -1,11 +1,17 @@
 {
   "radar": {
     "window_title": "Totally not a radar",
-    "size": 400,
-    "zoom": 10,
-    "bg_image": ""
+    "size": 200,
+    "zoom": 5,
+    "bg_image": "",
+    "ip": "localhost",
+    "port": 8985
   },
-  "renderer": "pygame",
+  "network": {
+    "ip": "localhost",
+    "port": 8985
+  },
+  "renderer": "remote",
   "game_path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\csgo",
   "offsets_url": "https://raw.githubusercontent.com/frk1/hazedumper/master/csgo.json",
   "check_visibility": false

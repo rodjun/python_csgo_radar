@@ -5,15 +5,16 @@ import requests
 from ctypes import c_void_p, create_string_buffer
 from time import sleep
 from radar.process import Process
-from radar.game_structures import Vector2, Entity
-from radar.renderers import PyGameRadar
-from radar.bsptrace import BspTrace
+from radar.renderers import PyGameRadar, RemoteRadar
+from csgo.game_structures import Vector2, Entity
+from csgo.bsptrace import BspTrace
 
 
 class CSGORadar(object):
-    renderers = {"pygame": PyGameRadar}
+    renderers = {"pygame": PyGameRadar,
+                 "remote": RemoteRadar}
     def __init__(self):
-        self.config = json.loads(open("config.json", "r").read())
+        self.config = json.loads(open("csgo/config.json", "r").read())
         offsets = requests.get(self.config['offsets_url']).json()
         self.addresses = offsets['signatures']
         self.netvars = offsets['netvars']
@@ -53,7 +54,10 @@ class CSGORadar(object):
 
                 enemy_pos += center
 
-                enemy_pos = self.rotate_point(enemy_pos, center, -self.local_player.angles.y)
+                if self.config['renderer'] == "pygame":
+                    enemy_pos = self.rotate_point(enemy_pos, center, -self.local_player.angles.y)
+                else:
+                    enemy_pos = self.rotate_point(enemy_pos, center, -self.local_player.angles.y - 90)
 
                 x_coords.append(enemy_pos.x)
                 y_coords.append(enemy_pos.y)
@@ -86,7 +90,7 @@ class CSGORadar(object):
 
         entity_ptr = c_void_p()
         for i in range(64):
-            self.process.read_memory((self.client_dll + self.addresses['dwEntityList']) + i * 16, entity_ptr)
+            self.process.read_memory((self.client_dll + addresses['dwEntityList']) + i * 16, entity_ptr)
             if entity_ptr.value is not None:
                 self.entities[i].update_info(self.process, entity_ptr.value, self.netvars, True)
             else:
@@ -110,4 +114,4 @@ if __name__ == "__main__":
     not_a_hack = CSGORadar()
     while True:
         not_a_hack.run()
-        sleep(0.008)
+        sleep(0.016)
