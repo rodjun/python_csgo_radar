@@ -100,7 +100,6 @@ class THREADENTRY32(Structure):
                 ('tpDeltaPri', c_uint),
                 ('dwFlags', c_uint)]
 
-
 class TH32CS_CLASS(object):
     INHERIT = 2147483648
     SNAPHEAPLIST = 1

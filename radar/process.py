@@ -1,21 +1,27 @@
 import copy
-from ctypes import byref, sizeof, c_int, windll
+from ctypes import byref, sizeof, c_int, windll, c_size_t, GetLastError
 from radar.structures import CreateToolhelp32Snapshot, TH32CS_CLASS, MODULEENTRY32, Module32First, Module32Next, CloseHandle
 
 
 class Process(object):
-    def __init__(self, name):
+    def __init__(self, name, is_64bit=False):
+        self.is_64bit = is_64bit
         hwnd = windll.user32.FindWindowW(None, name)
         print("hwnd: {}".format(hwnd))
         pid = c_int()
         windll.user32.GetWindowThreadProcessId(hwnd, byref(pid))
         self.pid = pid.value
         print("pid: {}".format(pid))
-        self.process = windll.kernel32.OpenProcess(0x10, False, self.pid) # 16 = PROCESS_VM_READ (0x0010)
+        self.process = windll.kernel32.OpenProcess(0x10, 0, self.pid) # 16 = PROCESS_VM_READ (0x0010)
+        print(self.process)
 
     def read_memory(self, address, into):
-        if not windll.kernel32.ReadProcessMemory(self.process, address, byref(into), sizeof(into), None):
-            raise Exception("Could not ReadProcessMemory: ", windll.kernel32.GetLastError())
+        if self.is_64bit:
+            bytes_read = c_size_t()
+            windll.ntdll.NtWow64ReadVirtualMemory64(self.process, address, byref(into), sizeof(into), byref(bytes_read))
+        else:
+            if not windll.kernel32.ReadProcessMemory(self.process, address, byref(into), sizeof(into), None):
+                raise Exception("Could not ReadProcessMemory: ", windll.kernel32.GetLastError())
 
     def list_modules(self):
         module_list = []

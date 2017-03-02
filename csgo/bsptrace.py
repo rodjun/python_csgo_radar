@@ -1,6 +1,6 @@
 import os
 from ctypes import sizeof
-from radar.game_structures import dheader_t, dplane_t, dnode_t, dleaf_t
+from csgo.game_structures import dheader_t, dplane_t, dnode_t, dleaf_t
 
 
 # pep-8 hell ahead
