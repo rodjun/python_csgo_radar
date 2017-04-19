@@ -5,17 +5,20 @@ import requests
 from ctypes import c_void_p, create_string_buffer
 from time import sleep
 from radar.process import Process
-from radar.renderers import PyGameRadar, RemoteRadar
+from radar.renderers import BaseRadar
 from csgo.game_structures import Vector2, Entity
 from csgo.bsptrace import BspTrace
 
 
 class CSGORadar(object):
-    renderers = {"pygame": PyGameRadar,
-                 "remote": RemoteRadar}
+    renderers = {radar.config_name:radar for radar in BaseRadar.__subclasses__()}
+
     def __init__(self):
         self.config = json.loads(open("csgo/config.json", "r").read())
-        offsets = requests.get(self.config['offsets_url']).json()
+        offsets = requests.get(self.config['offsets_url'])
+        offsets.raise_for_status()
+        offsets = offsets.json()
+
         self.addresses = offsets['signatures']
         self.netvars = offsets['netvars']
         self.local_player = Entity()
@@ -23,6 +26,12 @@ class CSGORadar(object):
         self.renderer = self.renderers[self.config['renderer']](self.config['radar'])
         self.bsp_tracer = BspTrace(self.config["game_path"])
         self.process = Process("Counter-Strike: Global Offensive")
+
+        if self.process.get_module_size("client.dll") != offsets["modules"]["client.dll"]["size"]:
+            print("client.dll size differs from the sigs, offsets might be outdated!")
+        if self.process.get_module_size("engine.dll") != offsets["modules"]["engine.dll"]["size"]:
+            print("engine.dll size differs from the sigs, offsets might be outdated!")
+
         self.client_dll = self.process.get_module_base("client.dll")
         self.engine_dll = self.process.get_module_base("engine.dll")
 
@@ -96,7 +105,8 @@ class CSGORadar(object):
             else:
                 self.entities[i].update_info(None, None, None, False)
 
-    def rotate_point(self, to_rotate, center, angle, angle_in_radians=False):
+    @staticmethod
+    def rotate_point(to_rotate, center, angle, angle_in_radians=False):
         if not angle_in_radians:
             angle *= math.pi / 180
 
