@@ -12,7 +12,7 @@ class States:
 class RadarProtocol(Protocol, object):
     data_send_format = "h" * 64
     data_receive_format = "h" + data_send_format
-    # Format is: an int saying what the packet is about + 64 (32 x y) shorts, 32 for team 1 and 32 for team 2
+    # Format is: a short saying what the packet is about + 64 (32 x y) shorts, 32 for team 1 and 32 for team 2
 
     def __init__(self, fac):
         super(self.__class__, self).__init__()

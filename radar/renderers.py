@@ -42,11 +42,11 @@ class RemoteRadar(BaseRadar):
     def update(self, x, y, color, visible):
         enemies = []
         friends = []
-        for row in zip(x, y, color):
-            if row[2] == 0:
-                friends += (row[0], row[1])
+        for x, y, is_enemy in zip(x, y, color):
+            if is_enemy == 0:
+                friends += (x, y)
             else:
-                enemies += (row[0], row[1])
+                enemies += (x, y)
 
         enemies.extend([-1] * (32 - len(enemies)))
         friends.extend([-1] * (32 - len(friends)))

@@ -22,7 +22,7 @@ class CSGORadar(object):
         self.addresses = offsets['signatures']
         self.netvars = offsets['netvars']
         self.local_player = Entity()
-        self.entities = [Entity() for i in range(64)]
+        self.entities = [Entity() for _ in range(64)]
         self.renderer = self.renderers[self.config['renderer']](self.config['radar'])
         self.bsp_tracer = BspTrace(self.config["game_path"])
         self.process = Process("Counter-Strike: Global Offensive")
