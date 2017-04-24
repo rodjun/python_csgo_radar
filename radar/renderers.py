@@ -4,6 +4,7 @@ import time
 import struct
 import socket
 import os
+from abc import ABC, abstractmethod
 
 class Color:
     BLACK = (0, 0, 0)
@@ -13,7 +14,18 @@ class Color:
     RED = (255, 0, 0)
 
 
-class RemoteRadar(object):
+class BaseRadar(ABC):
+    @abstractmethod
+    def __init__(self, config):
+        pass
+
+    @abstractmethod
+    def update(self, x, y, color, visible):
+        pass
+
+
+class RemoteRadar(BaseRadar):
+    config_name = "remoteradar"
     def __init__(self, config):
         print("Loading remote radar")
         print("Launching server...")
@@ -24,17 +36,17 @@ class RemoteRadar(object):
         print("Done, sleeping for 3sec to make sure that the server is running...")
         time.sleep(3)
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.s.connect((config['ip'], config['port']))
+        self.s.connect((config["network"]["ip"], config["network"]["port"]))
         print("If nothing went wrong, we should be here. I know that because there's no error handling")
 
     def update(self, x, y, color, visible):
         enemies = []
         friends = []
-        for row in zip(x, y, color):
-            if row[2] == 0:
-                friends += (row[0], row[1])
+        for x, y, is_enemy in zip(x, y, color):
+            if is_enemy == 0:
+                friends += (x, y)
             else:
-                enemies += (row[0], row[1])
+                enemies += (x, y)
 
         enemies.extend([-1] * (32 - len(enemies)))
         friends.extend([-1] * (32 - len(friends)))
@@ -47,10 +59,10 @@ class RemoteRadar(object):
         self.s.send(struct.pack("h" * 65, *map(int, final)))
 
 
-
-
 # TODO: Add an option to use sprites for background and player icons
-class PyGameRadar(object):
+class PyGameRadar(BaseRadar):
+    config_name = "pygameradar"
+
     def __init__(self, config):
         pygame.init()
         pygame.display.init()

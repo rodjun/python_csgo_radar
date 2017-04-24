@@ -43,3 +43,8 @@ class Process(object):
         for module in self.list_modules():
             if module.szModule.decode('UTF-8').lower() == module_name.lower():
                 return module.modBaseAddr
+
+    def get_module_size(self, module_name):
+        for module in self.list_modules():
+            if module.szModule.decode('UTF-8').lower() == module_name.lower():
+                return module.modBaseSize

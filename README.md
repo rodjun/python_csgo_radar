@@ -25,4 +25,4 @@ Feel free to add new renderers! I did a matplotlib one as a joke and it was supe
 
 It is [self updating](https://github.com/frk1/hazedumper) so you shouldn't have to change anything after a game update.
 
-
+Thanks to ninj4sec for [memorpy](https://github.com/n1nj4sec/memorpy/) and to frk1 for the always updated memory addresses, also big thanks to Zat on UC for his amazing radar [tutorial](https://www.unknowncheats.me/forum/general-programming-and-reversing/135529-implement-simple-radar.html) which most of the math is derived from.
