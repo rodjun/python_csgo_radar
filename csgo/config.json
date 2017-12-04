@@ -3,7 +3,7 @@
     "window_title": "Totally not a radar",
     "size": 400,
     "zoom": 5,
-    "bg_image": "",
+    "bg_image": ""
   },
   "network": {
     "ip": "localhost",
